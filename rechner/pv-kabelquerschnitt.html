@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PV-Kabelquerschnitt-Rechner - Photovoltaik Kabel berechnen</title>
+    <meta name="description" content="Berechnen Sie den optimalen Kabelquerschnitt für Ihre Photovoltaikanlage. Berücksichtigt Spannung, Strom, Länge und Spannungsfall.">
+    <style>
+        :root {
+            --bg: #0b1020;
+            --card: #121933;
+            --text: #e9edff;
+            --accent: #4ade80;
+            --border: #233052;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+        .back-link {
+            display: inline-block;
+            color: var(--accent);
+            text-decoration: none;
+            margin-bottom: 20px;
+        }
+        .back-link:hover { text-decoration: underline; }
+        label {
+            display: block;
+            margin: 15px 0 5px;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #0e1530;
+            color: var(--text);
+            font-size: 16px;
+        }
+        button {
+            background: linear-gradient(90deg, #60a5fa, var(--accent));
+            color: #081020;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+        button:hover { opacity: 0.9; }
+        .result {
+            background: #1a2942;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .result h3 { color: var(--accent); margin-bottom: 15px; }
+        .result-value {
+            font-size: 2.5em;
+            font-weight: 800;
+            color: var(--accent);
+            margin: 10px 0;
+        }
+        .info { font-size: 0.9em; color: #99a2c2; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← Zurück zur Übersicht</a>
+        
+        <div class="card">
+            <h1>⚡ PV-Kabelquerschnitt-Rechner</h1>
+            <p>Berechnen Sie den erforderlichen Kabelquerschnitt für Ihre Photovoltaikanlage</p>
+        </div>
+
+        <div class="card">
+            <h2>Eingaben</h2>
+            
+            <label for="voltage">Systemspannung (V)</label>
+            <input type="number" id="voltage" value="800" min="1">
+            
+            <label for="power">PV-Leistung (kW)</label>
+            <input type="number" id="power" value="5" min="0.1" step="0.1">
+            
+            <label for="length">Kabelwegänge (m)</label>
+            <input type="number" id="length" value="25" min="1">
+            
+            <label for="material">Leitermaterial</label>
+            <select id="material">
+                <option value="0.0175">Kupfer</option>
+                <option value="0.0280">Aluminium</option>
+            </select>
+            
+            <label for="drop">Max. Spannungsabfall (%)</label>
+            <input type="number" id="drop" value="3" min="0.1" step="0.1">
+            
+            <button onclick="calculate()">Berechnen</button>
+            
+            <div id="result" class="result" style="display:none;">
+                <h3>Ergebnis</h3>
+                <div>Empfohlener Querschnitt:</div>
+                <div class="result-value" id="resultValue">-</div>
+                <div class="info" id="info"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>So funktioniert die Berechnung</h3>
+            <p>Der Rechner ermittelt den optimalen Kabelquerschnitt basierend auf:</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>Systemspannung und Leistung</li>
+                <li>Kabelwegänge (Hin- und Rückleitung)</li>
+                <li>Leitermaterial (Kupfer oder Aluminium)</li>
+                <li>Maximal zulässigem Spannungsabfall</li>
+            </ul>
+            <p style="margin-top: 15px;">Formel: A = (2 × I × ρ × L) / ΔU</p>
+        </div>
+    </div>
+
+    <script>
+        const standardSizes = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120];
+
+        function calculate() {
+            const V = parseFloat(document.getElementById('voltage').value);
+            const P = parseFloat(document.getElementById('power').value) * 1000;
+            const L = parseFloat(document.getElementById('length').value);
+            const rho = parseFloat(document.getElementById('material').value);
+            const dropPct = parseFloat(document.getElementById('drop').value);
+
+            const I = P / V;
+            const dUmax = V * (dropPct / 100);
+            const A_required = (2 * I * rho * L) / dUmax;
+            
+            let A_standard = standardSizes.find(size => size >= A_required) || 120;
+            
+            const dU_actual = (2 * I * rho * L) / A_standard;
+            const dU_actual_pct = (dU_actual / V) * 100;
+            
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('resultValue').textContent = A_standard + ' mm²';
+            document.getElementById('info').innerHTML = `
+                Berechneter Strom: ${I.toFixed(2)} A<br>
+                Tatsächlicher Spannungsabfall: ${dU_actual_pct.toFixed(2)}% (${dU_actual.toFixed(2)} V)<br>
+                Leistungsverlust: ${(I * dU_actual).toFixed(2)} W
+            `;
+        }
+    </script>
+</body>
+</html>
